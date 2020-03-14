@@ -37,13 +37,17 @@ class GitSpec {
 }
 
 Future<GitSpec> locateGit(String package, String ref) async {
-  final localPackage = await locateLocal(package);
-  final gitRoot = await _findGitRoot(Directory(localPackage));
-  final path = gitRoot.path == localPackage
+  final localPackage = Directory(await locateLocal(package)).absolute;
+  final gitRoot = await _findGitRoot(localPackage);
+  final path = gitRoot.absolute.path == localPackage.path
       ? null
-      : p.relative(localPackage, from: gitRoot.path);
+      : p.relative(localPackage.path, from: gitRoot.path);
   final gitUrl = await _findGitUrl(gitRoot);
-  return GitSpec(package: package, url: gitUrl, path: path, ref: ref);
+  return GitSpec(
+      package: package,
+      url: gitUrl,
+      path: path,
+      ref: ref == 'master' ? null : ref);
 }
 
 Future<Directory> _findGitRoot(Directory dir) async {
@@ -69,7 +73,10 @@ Future<String> _findGitUrl(Directory dir) async {
       if (repo.org == org) return 'git://github.com/${repo.org}/${repo.name}';
     }
   }
-  throw UserFailure('Cannot find a github remote for ${dir.path}');
+  throw UserFailure(
+      'Cannot find a github remote in a supported org for ${dir.path}\n'
+      'Available remotes: ${remoteUrls}\n'
+      'Supported Orgs: $_preferredOrgs\n');
 }
 
 Future<String> _urlForRemote(Directory dir, String remote) async {

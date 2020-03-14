@@ -7,7 +7,9 @@ Future<String> locateLocal(String package) async {
   final manifest = await findManifest();
   if (manifest == null) {
     throw UserFailure(
-        'No .dartpackages manifest found above the current directory');
+        'No .dartpackages manifest found above the current directory\n'
+        'Run `dartdeps scan` in a parent directory of your local checkouts '
+        'of Dart packages.');
   }
   final lines = await manifest.readAsLines();
   final key = '$package:';
