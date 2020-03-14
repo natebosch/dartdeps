@@ -6,7 +6,7 @@ import 'package:io/io.dart';
 import 'package:io/ansi.dart';
 
 void main(List<String> args) async {
-  var commandRunner = CommandRunner<int>(
+  final commandRunner = CommandRunner<int>(
       'dartdeps', 'Generate pubspec dependencies for local and git overrides.')
     ..addCommand(Scan());
 
@@ -21,7 +21,7 @@ void main(List<String> args) async {
     return;
   }
 
-  var command = parsedArgs.command?.name;
+  final command = parsedArgs.command?.name;
 
   if (command == null) {
     commandRunner.printUsage();
