@@ -75,7 +75,7 @@ class LocateLocal extends Command<int> {
       usageException('Specify a single local package to locate');
     }
     final package = argResults.rest.single;
-    await locateLocal(package);
+    print(await locateLocal(package));
     return 0;
   }
 }

@@ -3,7 +3,7 @@ import 'package:path/path.dart' as p;
 import 'exceptions.dart';
 import 'find_manifest.dart';
 
-Future<int> locateLocal(String package) async {
+Future<String> locateLocal(String package) async {
   final manifest = await findManifest();
   if (manifest == null) {
     throw UserFailure(
@@ -14,8 +14,7 @@ Future<int> locateLocal(String package) async {
   for (final line in lines) {
     if (line.startsWith(key)) {
       final path = line.split(':')[1];
-      print(p.relative(path, from: p.current));
-      return 0;
+      return p.relative(path, from: p.current);
     }
   }
   throw UserFailure('$package not found in manifest at ${manifest.path}');
