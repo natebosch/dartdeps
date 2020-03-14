@@ -5,11 +5,18 @@ import 'package:dartdeps/dartdeps.dart';
 import 'package:http/http.dart' as http;
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
+import 'package:path/path.dart' as p;
 
 void main(List<String> args) async {
   final commandRunner = CommandRunner<int>(
-      'dartdeps', 'Generate pubspec dependencies for local and git overrides.',
+      'dartdeps', 'Generate pubspec dependencies for packages.',
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : 80)
+    ..argParser.addOption(
+      'from',
+      abbr: 'f',
+      help: 'The path from the working directory to the `pubspec.yaml` file.',
+      valueHelp: 'PATH',
+    )
     ..addCommand(LocateGit())
     ..addCommand(LocateLatest())
     ..addCommand(LocateLocal())
@@ -32,6 +39,15 @@ void main(List<String> args) async {
         (parsedArgs.command?.wasParsed('help') ?? false)) {
       await commandRunner.runCommand(parsedArgs);
       return;
+    }
+    if (parsedArgs.wasParsed('from')) {
+      final from =
+          p.dirname(p.relative(parsedArgs['from'] as String, from: p.current));
+      final workingDirectory = Directory(from);
+      if (!await workingDirectory.exists()) {
+        throw UserFailure('${p.absolute(from)} is not a directory.');
+      }
+      if (from != p.current) Directory.current = Directory(from);
     }
 
     exitCode = await commandRunner.runCommand(parsedArgs);
