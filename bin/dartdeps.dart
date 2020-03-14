@@ -7,9 +7,10 @@ import 'package:io/io.dart';
 
 void main(List<String> args) async {
   final commandRunner = CommandRunner<int>(
-      'dartdeps', 'Generate pubspec dependencies for local and git overrides.')
-    ..addCommand(Scan())
-    ..addCommand(LocateLocal());
+      'dartdeps', 'Generate pubspec dependencies for local and git overrides.',
+      usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : 80)
+    ..addCommand(LocateLocal())
+    ..addCommand(Scan());
 
   try {
     final parsedArgs = commandRunner.parse(args);
@@ -17,7 +18,7 @@ void main(List<String> args) async {
     final command = parsedArgs.command?.name;
 
     if (command == null) {
-      commandRunner.printUsage();
+      stderr.writeln(commandRunner.usage);
       exitCode = ExitCode.usage.code;
       return;
     }
@@ -31,13 +32,11 @@ void main(List<String> args) async {
 
     exitCode = await commandRunner.runCommand(parsedArgs);
   } on UsageException catch (e) {
-    print(red.wrap(e.message));
-    print('');
-    print(e.usage);
+    stderr..writeln(red.wrap(e.message))..writeln()..writeln(e.usage);
     exitCode = ExitCode.usage.code;
     return;
-  } on UserFailure catch(e) {
-    print(red.wrap(e.message));
+  } on UserFailure catch (e) {
+    stderr.writeln(red.wrap(e.message));
     exitCode = ExitCode.config.code;
   }
 }
