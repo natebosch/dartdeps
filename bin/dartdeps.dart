@@ -10,6 +10,7 @@ void main(List<String> args) async {
       'dartdeps', 'Generate pubspec dependencies for local and git overrides.',
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : 80)
     ..addCommand(LocateLocal())
+    ..addCommand(Replace())
     ..addCommand(Scan());
 
   try {
@@ -76,6 +77,23 @@ class LocateLocal extends Command<int> {
     }
     final package = argResults.rest.single;
     print(await locateLocal(package));
+    return 0;
+  }
+}
+
+class Replace extends Command<int> {
+  @override
+  String get description =>
+      'Provides a replacement for a pubspec dependency entry from a '
+      'placeholde constraint on stdin';
+
+  @override
+  String get name => 'replace';
+
+  @override
+  Future<int> run() async {
+    final line = await stdin.readLineSync();
+    print(await replaceDependency(line));
     return 0;
   }
 }
