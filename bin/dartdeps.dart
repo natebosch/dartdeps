@@ -10,6 +10,7 @@ void main(List<String> args) async {
   final commandRunner = CommandRunner<int>(
       'dartdeps', 'Generate pubspec dependencies for local and git overrides.',
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : 80)
+    ..addCommand(LocateGit())
     ..addCommand(LocateLatest())
     ..addCommand(LocateLocal())
     ..addCommand(Replace())
@@ -107,6 +108,31 @@ class LocateLatest extends Command<int> {
     } finally {
       client.close();
     }
+    return 0;
+  }
+}
+
+class LocateGit extends Command<int> {
+  @override
+  String get description =>
+      'Prints the git url, and optionally path and ref for a package in the '
+      'dart-lang or google github org.';
+
+  @override
+  String get invocation => '${super.invocation} <package> [ref]';
+
+  @override
+  String get name => 'git';
+
+  @override
+  Future<int> run() async {
+    if (argResults.rest.isEmpty || argResults.rest.length > 2) {
+      usageException('Specify a single package and optionall a git ref');
+    }
+    final package = argResults.rest.first;
+    final ref = argResults.rest.length > 1 ? argResults.rest[1] : 'master';
+    final gitSpec = await locateGit(package, ref);
+    print(gitSpec);
     return 0;
   }
 }
