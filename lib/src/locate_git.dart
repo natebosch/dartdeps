@@ -5,13 +5,13 @@ import 'package:path/path.dart' as p;
 import 'exceptions.dart';
 import 'locate_local.dart';
 
-class GitSpec {
+class _GitSpec {
   final String package;
   final String url;
   final String path;
   final String ref;
 
-  GitSpec({this.package, this.url, this.path, this.ref});
+  _GitSpec({this.package, this.url, this.path, this.ref});
 
   @override
   String toString() {
@@ -36,18 +36,19 @@ class GitSpec {
   }
 }
 
-Future<GitSpec> locateGit(String package, String ref) async {
-  final localPackage = Directory(await locateLocal(package)).absolute;
+Future<String> locateGit(String package, String ref) async {
+  final localPackage = Directory(await localPath(package)).absolute;
   final gitRoot = await _findGitRoot(localPackage);
   final path = gitRoot.absolute.path == localPackage.path
       ? null
       : p.relative(localPackage.path, from: gitRoot.path);
   final gitUrl = await _findGitUrl(gitRoot);
-  return GitSpec(
+  final spec = _GitSpec(
       package: package,
       url: gitUrl,
       path: path,
       ref: ref == 'master' ? null : ref);
+  return '$spec';
 }
 
 Future<Directory> _findGitRoot(Directory dir) async {

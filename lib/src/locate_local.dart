@@ -3,7 +3,12 @@ import 'package:path/path.dart' as p;
 import 'exceptions.dart';
 import 'find_manifest.dart';
 
-Future<String> locateLocal(String package) async {
+Future<String> locateLocal(String package) async => '''
+  $package:
+    path: ${await localPath(package)}
+''';
+
+Future<String> localPath(String package) async {
   final manifest = await findManifest();
   if (manifest == null) {
     throw UserFailure(

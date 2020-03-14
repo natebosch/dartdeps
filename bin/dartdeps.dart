@@ -48,7 +48,7 @@ void main(List<String> args) async {
 class Scan extends Command<int> {
   @override
   String get description =>
-      'Scan for local Dart projects under the current directory';
+      'Scan for local Dart projects under the current directory.';
 
   @override
   String get name => 'scan';
@@ -64,8 +64,7 @@ class Scan extends Command<int> {
 class LocateLocal extends Command<int> {
   @override
   String get description =>
-      'Prints the relative path from the current directory to the '
-      'directory containing a package.';
+      'Prints a path dependency with a relative path to a local package.';
 
   @override
   String get invocation => '${super.invocation} <package>';
@@ -79,7 +78,7 @@ class LocateLocal extends Command<int> {
       usageException('Specify a single local package to locate');
     }
     final package = argResults.rest.single;
-    print(await locateLocal(package));
+    stdout.write(await locateLocal(package));
     return 0;
   }
 }
@@ -87,7 +86,7 @@ class LocateLocal extends Command<int> {
 class LocateLatest extends Command<int> {
   @override
   String get description =>
-      'Prints a semver constraint for the latest feature version of a package '
+      'Prints a semver dependency for the latest feature version of a package '
       'on pub.';
 
   @override
@@ -104,7 +103,7 @@ class LocateLatest extends Command<int> {
     final package = argResults.rest.single;
     final client = http.Client();
     try {
-      print(await locateLatest(package, client));
+      stdout.write(await locateLatest(package, client));
     } finally {
       client.close();
     }
@@ -115,8 +114,8 @@ class LocateLatest extends Command<int> {
 class LocateGit extends Command<int> {
   @override
   String get description =>
-      'Prints the git url, and optionally path and ref for a package in the '
-      'dart-lang or google github org.';
+      'Prints a git dependency for a package in the dart-lang or '
+      'google github org.';
 
   @override
   String get invocation => '${super.invocation} <package> [ref]';
@@ -131,8 +130,7 @@ class LocateGit extends Command<int> {
     }
     final package = argResults.rest.first;
     final ref = argResults.rest.length > 1 ? argResults.rest[1] : 'master';
-    final gitSpec = await locateGit(package, ref);
-    print(gitSpec);
+    stdout.write(await locateGit(package, ref));
     return 0;
   }
 }
@@ -140,8 +138,14 @@ class LocateGit extends Command<int> {
 class Replace extends Command<int> {
   @override
   String get description =>
-      'Provides a replacement for a pubspec dependency entry from a '
-      'placeholde constraint on stdin';
+      'Prints a replacement for a pubspec dependency from a '
+      'placeholder on stdin.\n\n'
+      'The placeholder should be in the format `package: <style>`\n\n'
+      'For example:\n'
+      ' build: local\n'
+      ' build: latest\n'
+      ' build: git\n'
+      ' build: git@ref\n';
 
   @override
   String get name => 'replace';
@@ -151,7 +155,7 @@ class Replace extends Command<int> {
     final line = await stdin.readLineSync();
     final client = http.Client();
     try {
-      print(await replaceDependency(line, client));
+      stdout.write(await replaceDependency(line, client));
     } finally {
       client.close();
     }

@@ -18,11 +18,10 @@ Future<String> locateLatest(String package, http.Client client) async {
   final decoded = await _query(package, client);
   final latest = decoded['latest'] as Map<String, dynamic>;
   final version = Version.parse(latest['version'] as String);
-  if (version.major == 0) {
-    return '^${Version(0, version.minor, version.patch)}';
-  } else {
-    return '^${Version(version.major, version.minor, 0)}';
-  }
+  final constraint = version.major == 0
+      ? Version(0, version.minor, version.patch)
+      : Version(version.major, version.minor, 0);
+  return '  $package: ^$constraint\n';
 }
 
 Future<Map<String, dynamic>> _query(String package, http.Client client) async {
