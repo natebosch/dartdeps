@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:io/io.dart';
+import 'package:dartdeps/dartdeps.dart';
 import 'package:io/ansi.dart';
+import 'package:io/io.dart';
 
 void main(List<String> args) async {
   final commandRunner = CommandRunner<int>(
@@ -49,7 +50,8 @@ class Scan extends Command<int> {
 
   @override
   Future<int> run() async {
-    print('Scan for dart packages');
+    print('Scanning for dart packages');
+    await scanForPackages();
     return 0;
   }
 }
