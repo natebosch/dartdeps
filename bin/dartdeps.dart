@@ -36,6 +36,9 @@ void main(List<String> args) async {
     print(e.usage);
     exitCode = ExitCode.usage.code;
     return;
+  } on UserFailure catch(e) {
+    print(red.wrap(e.message));
+    exitCode = ExitCode.config.code;
   }
 }
 
@@ -73,7 +76,7 @@ class LocateLocal extends Command<int> {
       usageException('Specify a single local package to locate');
     }
     final package = argResults.rest.single;
-    print('Locating $package');
+    await locateLocal(package);
     return 0;
   }
 }
