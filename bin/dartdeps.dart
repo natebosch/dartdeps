@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:dartdeps/dartdeps.dart';
 import 'package:io/ansi.dart';
@@ -9,11 +8,28 @@ import 'package:io/io.dart';
 void main(List<String> args) async {
   final commandRunner = CommandRunner<int>(
       'dartdeps', 'Generate pubspec dependencies for local and git overrides.')
-    ..addCommand(Scan());
+    ..addCommand(Scan())
+    ..addCommand(LocateLocal());
 
-  ArgResults parsedArgs;
   try {
-    parsedArgs = commandRunner.parse(args);
+    final parsedArgs = commandRunner.parse(args);
+
+    final command = parsedArgs.command?.name;
+
+    if (command == null) {
+      commandRunner.printUsage();
+      exitCode = ExitCode.usage.code;
+      return;
+    }
+
+    if (command == 'help' ||
+        parsedArgs.wasParsed('help') ||
+        (parsedArgs.command?.wasParsed('help') ?? false)) {
+      await commandRunner.runCommand(parsedArgs);
+      return;
+    }
+
+    exitCode = await commandRunner.runCommand(parsedArgs);
   } on UsageException catch (e) {
     print(red.wrap(e.message));
     print('');
@@ -21,23 +37,6 @@ void main(List<String> args) async {
     exitCode = ExitCode.usage.code;
     return;
   }
-
-  final command = parsedArgs.command?.name;
-
-  if (command == null) {
-    commandRunner.printUsage();
-    exitCode = ExitCode.usage.code;
-    return;
-  }
-
-  if (command == 'help' ||
-      parsedArgs.wasParsed('help') ||
-      (parsedArgs.command?.wasParsed('help') ?? false)) {
-    await commandRunner.runCommand(parsedArgs);
-    return;
-  }
-
-  exitCode = await commandRunner.runCommand(parsedArgs);
 }
 
 class Scan extends Command<int> {
@@ -52,6 +51,29 @@ class Scan extends Command<int> {
   Future<int> run() async {
     print('Scanning for dart packages');
     await scanForPackages();
+    return 0;
+  }
+}
+
+class LocateLocal extends Command<int> {
+  @override
+  String get description =>
+      'Prints the relative path from the current directory to the '
+      'directory containing a package.';
+
+  @override
+  String get invocation => '${super.invocation} <package>';
+
+  @override
+  String get name => 'local';
+
+  @override
+  Future<int> run() async {
+    if (argResults.rest.length != 1) {
+      usageException('Specify a single local package to locate');
+    }
+    final package = argResults.rest.single;
+    print('Locating $package');
     return 0;
   }
 }
