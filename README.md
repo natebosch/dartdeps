@@ -83,8 +83,11 @@ nnoremap <leader>dr :.! dartdeps --from=% replace<cr>
 xnoremap <leader>dr !dartdeps --from=% replace<cr>
 ```
 
-Use `<leadr>dl` then type the name of a package and hit `<enter>` to insert the
-local path pub constraint for that package below the cursor.
+Use `<leadr>dl` or `<leader>dp` then type the name of a package and hit
+`<enter>` to insert a local path constraint, or a pub carrot constraint for that
+package below the cursor. Use `<leader>dg` then type the name of a package, and
+optionally a git ref, and hit `<enter>` to insert a git constraint for that
+package below the cursor.
 
 Use `<leader>dr` to pipe the current line through `dartdeps replace` from normal
 mode, or from visual mode. When used in visual mode with multiple lines selected
@@ -97,7 +100,7 @@ Install the [EditWithShell extension][EditWithShell]. Suggested settings:
 
 ```json
 {
-  "editWithShell.favoritCommands": [
+  "editWithShell.favoriteCommands": [
     {"id": "dartdeps-replace", "command": "dartdeps replace"},
   ],
   "editWithShell.quickCommand1":  "dartdeps-replace",
