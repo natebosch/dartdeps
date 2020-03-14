@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:dartdeps/dartdeps.dart';
+import 'package:http/http.dart' as http;
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
 
@@ -9,6 +10,7 @@ void main(List<String> args) async {
   final commandRunner = CommandRunner<int>(
       'dartdeps', 'Generate pubspec dependencies for local and git overrides.',
       usageLineLength: stdout.hasTerminal ? stdout.terminalColumns : 80)
+    ..addCommand(LocateLatest())
     ..addCommand(LocateLocal())
     ..addCommand(Replace())
     ..addCommand(Scan());
@@ -81,6 +83,34 @@ class LocateLocal extends Command<int> {
   }
 }
 
+class LocateLatest extends Command<int> {
+  @override
+  String get description =>
+      'Prints a semver constraint for the latest feature version of a package '
+      'on pub.';
+
+  @override
+  String get invocation => '${super.invocation} <package>';
+
+  @override
+  String get name => 'latest';
+
+  @override
+  Future<int> run() async {
+    if (argResults.rest.length != 1) {
+      usageException('Specify a single local package to locate');
+    }
+    final package = argResults.rest.single;
+    final client = http.Client();
+    try {
+      print(await locateLatest(package, client));
+    } finally {
+      client.close();
+    }
+    return 0;
+  }
+}
+
 class Replace extends Command<int> {
   @override
   String get description =>
@@ -93,7 +123,12 @@ class Replace extends Command<int> {
   @override
   Future<int> run() async {
     final line = await stdin.readLineSync();
-    print(await replaceDependency(line));
+    final client = http.Client();
+    try {
+      print(await replaceDependency(line, client));
+    } finally {
+      client.close();
+    }
     return 0;
   }
 }
