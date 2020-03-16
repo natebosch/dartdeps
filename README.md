@@ -120,4 +120,4 @@ Suggested keymaps:
 Select a line like `  test: local` and hit `ctrl+d ctrl+r` to replace it with an
 appropriate local path dependency for the test package.
 
-[EditWithShell]: https://marketplace.visualstudio.com/items?itemName=ryu1kn.edit-with-shell.
+[EditWithShell]: https://marketplace.visualstudio.com/items?itemName=ryu1kn.edit-with-shell
