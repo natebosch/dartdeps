@@ -118,6 +118,8 @@ Suggested keymaps:
 ```
 
 Select a line like `  test: local` and hit `ctrl+d ctrl+r` to replace it with an
-appropriate local path dependency for the test package.
+appropriate local path dependency for the test package. Be sure to select the
+entire line, if your selection follows any spaces there will be extra
+indentation inserted.
 
 [EditWithShell]: https://marketplace.visualstudio.com/items?itemName=ryu1kn.edit-with-shell
