@@ -7,9 +7,9 @@ import 'exceptions.dart';
 
 final _versionQueryUri = Uri.https('pub.dev', 'api/packages/');
 
-/// Returns a carrot constraint for the latest version of a package on pub.
+/// Returns a caret constraint for the latest version of a package on pub.
 ///
-/// Queries the pub API for the latest version of a package. Returns a carrot
+/// Queries the pub API for the latest version of a package. Returns a caret
 /// constraint without the patch version. For example if the latest version is
 /// `1.2.2` returns `^1.2.0`. For packages with a major version of `0` strips
 /// the build number. For example if the latest version is `0.5.1+2` return

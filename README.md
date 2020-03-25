@@ -1,7 +1,7 @@
 A tool for finding the pub constraints for Dart package dependencies. Save from
 having to manually count up the right number of directories for path overrides,
 or remembering the syntax for a git dependency. It can also find the latest
-published version of a package on pub and provide a carrot constraint.
+published version of a package on pub and provide a caret constraint.
 
 This tool _prints_ the constraints, it does not edit a pubspec file directly. It
 is designed to be invoked from an editor capable of inserting the output of a
@@ -23,7 +23,7 @@ new Dart package the scan must be performed again.
 
 ## latest
 
-Finds the latest version of a package published to pub and emits a carrot
+Finds the latest version of a package published to pub and emits a caret
 constraint. The patch version is stripped to follow best practices for
 dependencies.
 
@@ -84,7 +84,7 @@ xnoremap <leader>dr !dartdeps --from=% replace<cr>
 ```
 
 Use `<leadr>dl` or `<leader>dp` then type the name of a package and hit
-`<enter>` to insert a local path constraint, or a pub carrot constraint for that
+`<enter>` to insert a local path constraint, or a pub caret constraint for that
 package below the cursor. Use `<leader>dg` then type the name of a package, and
 optionally a git ref, and hit `<enter>` to insert a git constraint for that
 package below the cursor.
