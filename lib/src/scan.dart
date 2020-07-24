@@ -37,6 +37,7 @@ class _Package {
     if (!await pubspec.exists()) return _Package(dir, null);
     final content = await pubspec.readAsString();
     final parsed = loadYaml(content);
+    if (parsed == null) return _Package(dir, null);
     final name = parsed['name'] as String;
     return _Package(dir, name);
   }
