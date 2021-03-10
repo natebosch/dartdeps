@@ -30,7 +30,7 @@ Stream<_Package> _findPackages(Directory from) {
 
 class _Package {
   final Directory dir;
-  final String name;
+  final String? name;
   _Package(this.dir, this.name);
   static Future<_Package> check(Directory dir) async {
     final pubspec = File(p.join(dir.path, 'pubspec.yaml'));

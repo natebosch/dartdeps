@@ -8,10 +8,14 @@ import 'locate_local.dart';
 class _GitSpec {
   final String package;
   final String url;
-  final String path;
-  final String ref;
+  final String? path;
+  final String? ref;
 
-  _GitSpec({this.package, this.url, this.path, this.ref});
+  _GitSpec(
+      {required this.package,
+      required this.url,
+      required this.path,
+      required this.ref});
 
   @override
   String toString() {
@@ -36,7 +40,7 @@ class _GitSpec {
   }
 }
 
-Future<String> locateGit(String package, String ref) async {
+Future<String> locateGit(String package, String? ref) async {
   final localPackage = Directory(await localPath(package)).absolute;
   final gitRoot = await _findGitRoot(localPackage);
   final path = gitRoot.absolute.path == localPackage.path
@@ -68,7 +72,7 @@ Future<String> _findGitUrl(Directory dir) async {
   final remoteUrls = [
     for (final remote in remoteNames) await _urlForRemote(dir, remote)
   ];
-  final repos = [for (final url in remoteUrls) _GithubRepo.parse(url)];
+  final repos = [for (final url in remoteUrls) _GithubRepo.parse(url)!];
   for (final org in _preferredOrgs) {
     for (final repo in repos) {
       if (repo.org == org) return 'git://github.com/${repo.org}/${repo.name}';
@@ -76,7 +80,7 @@ Future<String> _findGitUrl(Directory dir) async {
   }
   throw UserFailure(
       'Cannot find a github remote in a supported org for ${dir.path}\n'
-      'Available remotes: ${remoteUrls}\n'
+      'Available remotes: $remoteUrls\n'
       'Supported Orgs: $_preferredOrgs\n');
 }
 
@@ -90,14 +94,14 @@ class _GithubRepo {
   final String org;
   final String name;
   _GithubRepo(this.org, this.name);
-  static _GithubRepo parse(String remoteUrl) {
+  static _GithubRepo? parse(String remoteUrl) {
     final path = _parseGithubPath(remoteUrl);
     if (path == null) return null;
     final parts = p.url.split(path);
     return _GithubRepo(parts[0], parts[1]);
   }
 
-  static String _parseGithubPath(String remoteUrl) {
+  static String? _parseGithubPath(String remoteUrl) {
     if (remoteUrl.startsWith('git@github.com:')) {
       return remoteUrl.split(':')[1];
     } else if (remoteUrl.startsWith('https://github.com/') ||

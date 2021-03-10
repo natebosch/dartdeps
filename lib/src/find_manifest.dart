@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-Future<File> findManifest() async {
+Future<File?> findManifest() async {
   var search = Directory.current;
   while (search.parent.path != search.path) {
     search = search.parent;

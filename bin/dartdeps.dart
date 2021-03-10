@@ -50,7 +50,7 @@ void main(List<String> args) async {
       if (from != p.current) Directory.current = Directory(from);
     }
 
-    exitCode = await commandRunner.runCommand(parsedArgs);
+    exitCode = await commandRunner.runCommand(parsedArgs) ?? 0;
   } on UsageException catch (e) {
     stderr..writeln(red.wrap(e.message))..writeln()..writeln(e.usage);
     exitCode = ExitCode.usage.code;
@@ -90,10 +90,10 @@ class LocateLocal extends Command<int> {
 
   @override
   Future<int> run() async {
-    if (argResults.rest.length != 1) {
+    if (argResults!.rest.length != 1) {
       usageException('Specify a single local package to locate');
     }
-    final package = argResults.rest.single;
+    final package = argResults!.rest.single;
     stdout.write(await locateLocal(package));
     return 0;
   }
@@ -113,10 +113,10 @@ class LocateLatest extends Command<int> {
 
   @override
   Future<int> run() async {
-    if (argResults.rest.length != 1) {
+    if (argResults!.rest.length != 1) {
       usageException('Specify a single local package to locate');
     }
-    final package = argResults.rest.single;
+    final package = argResults!.rest.single;
     final client = http.Client();
     try {
       stdout.write(await locateLatest(package, client));
@@ -141,11 +141,11 @@ class LocateGit extends Command<int> {
 
   @override
   Future<int> run() async {
-    if (argResults.rest.isEmpty || argResults.rest.length > 2) {
+    if (argResults!.rest.isEmpty || argResults!.rest.length > 2) {
       usageException('Specify a single package and optionall a git ref');
     }
-    final package = argResults.rest.first;
-    final ref = argResults.rest.length > 1 ? argResults.rest[1] : 'master';
+    final package = argResults!.rest.first;
+    final ref = argResults!.rest.length > 1 ? argResults!.rest[1] : 'master';
     stdout.write(await locateGit(package, ref));
     return 0;
   }
@@ -168,7 +168,7 @@ class Replace extends Command<int> {
 
   @override
   Future<int> run() async {
-    final line = await stdin.readLineSync();
+    final line = stdin.readLineSync()!;
     final client = http.Client();
     try {
       stdout.write(await replaceDependency(line, client));
