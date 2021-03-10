@@ -179,11 +179,15 @@ Future<String?> _packageRelativePath(
       return _relativeArchivePath(file.name);
     }
   }
+  // If it was not found, omit the path. User will need to handle it.
   return null;
 }
 
-String _relativeArchivePath(String archiveFilePath) =>
-    p.joinAll(p.split(p.dirname(archiveFilePath)).skip(1));
+String? _relativeArchivePath(String archiveFilePath) {
+  final parts = p.split(p.dirname(archiveFilePath)).skip(1).toList();
+  if (parts.isEmpty) return null;
+  return p.joinAll(parts);
+}
 
 bool _isPackagePubspec(String package, String pubspecContent) =>
     Pubspec.parse(pubspecContent).name == package;
