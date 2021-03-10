@@ -5,10 +5,12 @@ environment:
 
 dependencies:
   args: ^2.0.0
+  graphs: ^1.0.0
   http: ^0.13.0
   io: ^1.0.0
   path: ^1.8.0
   pub_semver: ^2.0.0
+  pubspec_parse: ^1.0.0
   stream_transform: ^2.0.0
   yaml: ^3.0.0
 

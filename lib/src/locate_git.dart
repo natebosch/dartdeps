@@ -41,7 +41,7 @@ class _GitSpec {
 }
 
 Future<String> locateGit(String package, String? ref) async {
-  final localPackage = Directory(await localPath(package)).absolute;
+  final localPackage = Directory(await localPath(package, [])).absolute;
   final gitRoot = await _findGitRoot(localPackage);
   final path = gitRoot.absolute.path == localPackage.path
       ? null
