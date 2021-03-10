@@ -48,42 +48,32 @@ class _GitSpec {
 Future<String> locateGit(String package, String ref, List<String> searchPaths,
     http.Client client) async {
   try {
-    final latest = await queryPub(package, client);
-    final pubspec = Pubspec.fromJson(latest['pubspec'] as Map<String, dynamic>);
-    final repository = _findRepository(pubspec);
-    final path = await _packageRelativePath(package, repository, ref);
-    final spec = _GitSpec(
-        package: package,
-        url: Uri(
-            scheme: 'git',
-            host: 'github.com',
-            pathSegments: [repository.org, repository.name]).toString(),
-        path: path,
-        ref: ref == 'master' ? null : ref);
-    return '$spec';
+    return await _locateFromPubConfig(package, ref, client);
   } on PackageNotPublished {
-    // Fall back on searching locally in case the package is not published.
     try {
-      final localPackage =
-          Directory(await localPath(package, searchPaths)).absolute;
-      final gitRoot = findGitRoot(localPackage);
-      if (gitRoot == null) {
-        throw UserFailure('$package found at $localPath is not in a git repo');
-      }
-      final path = gitRoot.absolute.path == localPackage.path
-          ? null
-          : p.relative(localPackage.path, from: gitRoot.path);
-      final gitUrl = await _findGitUrl(gitRoot);
-      final spec = _GitSpec(
-          package: package,
-          url: gitUrl.toString(),
-          path: path,
-          ref: ref == 'master' ? null : ref);
-      return '$spec';
+      return await _locateFromLocalPackageCheckout(
+          package, ref, searchPaths, client);
     } on PackageNotFound catch (e) {
       throw PackageNotFound(e.package, ['publisehd to pub', ...e.searched]);
     }
   }
+}
+
+Future<String> _locateFromPubConfig(
+    String package, String ref, http.Client client) async {
+  final latest = await queryPub(package, client);
+  final pubspec = Pubspec.fromJson(latest['pubspec'] as Map<String, dynamic>);
+  final repository = _findRepository(pubspec);
+  final path = await _packageRelativePath(package, repository, ref);
+  final spec = _GitSpec(
+      package: package,
+      url: Uri(
+          scheme: 'git',
+          host: 'github.com',
+          pathSegments: [repository.org, repository.name]).toString(),
+      path: path,
+      ref: ref == 'master' ? null : ref);
+  return '$spec';
 }
 
 _GithubRepo _findRepository(Pubspec pubspec) {
@@ -97,6 +87,26 @@ _GithubRepo _findRepository(Pubspec pubspec) {
   }
   final path = uri.pathSegments.take(2).toList();
   return _GithubRepo(path[0], path[1]);
+}
+
+Future<String> _locateFromLocalPackageCheckout(String package, String ref,
+    List<String> searchPaths, http.Client client) async {
+  final localPackage =
+      Directory(await localPath(package, searchPaths)).absolute;
+  final gitRoot = findGitRoot(localPackage);
+  if (gitRoot == null) {
+    throw UserFailure('$package found at $localPath is not in a git repo');
+  }
+  final path = gitRoot.absolute.path == localPackage.path
+      ? null
+      : p.relative(localPackage.path, from: gitRoot.path);
+  final gitUrl = await _findGitUrl(gitRoot);
+  final spec = _GitSpec(
+      package: package,
+      url: gitUrl.toString(),
+      path: path,
+      ref: ref == 'master' ? null : ref);
+  return '$spec';
 }
 
 Future<_GithubRepo> _findGitUrl(Directory dir) async {
