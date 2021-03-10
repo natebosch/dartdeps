@@ -6,6 +6,7 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import 'exceptions.dart';
+import 'directory_search.dart';
 
 Future<String> locateLocal(String package, List<String> searchPaths) async =>
     '''
@@ -14,11 +15,11 @@ Future<String> locateLocal(String package, List<String> searchPaths) async =>
 ''';
 
 Future<String> localPath(String package, List<String> searchPaths) async {
-  final gitRoot = _findGitRoot();
+  final gitRoot = findGitRoot(Directory.current);
   if (gitRoot == null && searchPaths.isEmpty) {
     throw UserFailure('No local git repo found, and no search paths provided');
   }
-  final searched = [];
+  final searched = <String>[];
   if (gitRoot != null) {
     final nearBy = await _findInDirectory(package, gitRoot) ??
         await _findInNeighbors(package, gitRoot);
@@ -34,21 +35,7 @@ Future<String> localPath(String package, List<String> searchPaths) async {
     }
     searched.add('the provided search paths');
   }
-  throw UserFailure('$package not found in ${searched.join(', or ')}.');
-}
-
-Directory? _findGitRoot() {
-  for (final directory in Directory.current.absolute.parents) {
-    if (directory.containsDirectory('.git')) return directory;
-  }
-  return null;
-}
-
-Future<String?> _findInDirectory(String package, Directory directory) async {
-  await for (final pubspecFile in _findPubspecs(directory.path)) {
-    final pubspec = Pubspec.parse(await pubspecFile.readAsString());
-    if (pubspec.name == package) return pubspecFile.parent.path;
-  }
+  throw PackageNotFound(package, searched);
 }
 
 Future<String?> _findInNeighbors(String package, Directory gitRoot) async {
@@ -61,6 +48,13 @@ Future<String?> _findInNeighbors(String package, Directory gitRoot) async {
     if (subdirectory.path == gitRoot.path) continue;
     final found = await _findInDirectory(package, subdirectory);
     if (found != null) return found;
+  }
+}
+
+Future<String?> _findInDirectory(String package, Directory directory) async {
+  await for (final pubspecFile in _findPubspecs(directory.path)) {
+    final pubspec = Pubspec.parse(await pubspecFile.readAsString());
+    if (pubspec.name == package) return pubspecFile.parent.path;
   }
 }
 
@@ -77,17 +71,6 @@ extension on Directory {
   Iterable<Directory> get subDirectories => listSync()
       .whereType<Directory>()
       .where((d) => !p.basename(d.path).startsWith('.'));
-
-  Iterable<Directory> get parents sync* {
-    var directory = absolute;
-    do {
-      yield directory;
-      directory = directory.parent;
-    } while (directory.path != directory.parent.path);
-  }
-
-  bool containsDirectory(String name) =>
-      Directory.fromUri(uri.resolve(name)).existsSync();
 
   File file(String name) => File.fromUri(uri.resolve(name));
 }

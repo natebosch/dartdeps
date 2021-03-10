@@ -21,8 +21,7 @@ void main(List<String> args) async {
     ..addCommand(LocateGit())
     ..addCommand(LocateLatest())
     ..addCommand(LocateLocal())
-    ..addCommand(Replace())
-    ..addCommand(Scan());
+    ..addCommand(Replace());
 
   try {
     final parsedArgs = commandRunner.parse(args);
@@ -59,22 +58,6 @@ void main(List<String> args) async {
   } on UserFailure catch (e) {
     stderr.writeln(red.wrap(e.message));
     exitCode = ExitCode.config.code;
-  }
-}
-
-class Scan extends Command<int> {
-  @override
-  String get description =>
-      'Scan for local Dart projects under the current directory.';
-
-  @override
-  String get name => 'scan';
-
-  @override
-  Future<int> run() async {
-    print('Scanning for dart packages');
-    await scanForPackages();
-    return 0;
   }
 }
 
@@ -135,6 +118,9 @@ class LocateLatest extends Command<int> {
 }
 
 class LocateGit extends Command<int> {
+  LocateGit() {
+    _addSearchPathsOption(argParser);
+  }
   @override
   String get description =>
       'Prints a git dependency for a package in the dart-lang or '
@@ -148,12 +134,19 @@ class LocateGit extends Command<int> {
 
   @override
   Future<int> run() async {
-    if (argResults!.rest.isEmpty || argResults!.rest.length > 2) {
+    final argResults = this.argResults!;
+    if (argResults.rest.isEmpty || argResults.rest.length > 2) {
       usageException('Specify a single package and optionall a git ref');
     }
-    final package = argResults!.rest.first;
-    final ref = argResults!.rest.length > 1 ? argResults!.rest[1] : 'master';
-    stdout.write(await locateGit(package, ref));
+    final package = argResults.rest.first;
+    final ref = argResults.rest.length > 1 ? argResults.rest[1] : 'master';
+    final client = http.Client();
+    try {
+      stdout.write(await locateGit(
+          package, ref, argResults['search-path'] as List<String>, client));
+    } finally {
+      client.close();
+    }
     return 0;
   }
 }

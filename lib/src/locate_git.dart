@@ -1,9 +1,14 @@
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:archive/archive.dart';
 
+import 'directory_search.dart';
 import 'exceptions.dart';
 import 'locate_local.dart';
+import 'pub_api.dart';
 
 class _GitSpec {
   final String package;
@@ -40,31 +45,61 @@ class _GitSpec {
   }
 }
 
-Future<String> locateGit(String package, String? ref) async {
-  final localPackage = Directory(await localPath(package, [])).absolute;
-  final gitRoot = await _findGitRoot(localPackage);
-  final path = gitRoot.absolute.path == localPackage.path
-      ? null
-      : p.relative(localPackage.path, from: gitRoot.path);
-  final gitUrl = await _findGitUrl(gitRoot);
-  final spec = _GitSpec(
-      package: package,
-      url: gitUrl,
-      path: path,
-      ref: ref == 'master' ? null : ref);
-  return '$spec';
-}
-
-Future<Directory> _findGitRoot(Directory dir) async {
-  if (dir.parent.path == dir.path) {
-    throw UserFailure('No git repo found for ${dir.path}');
+Future<String> locateGit(String package, String ref, List<String> searchPaths,
+    http.Client client) async {
+  try {
+    final latest = await queryPub(package, client);
+    final pubspec = Pubspec.fromJson(latest['pubspec'] as Map<String, dynamic>);
+    final repository = _findRepository(pubspec);
+    final path = await _packageRelativePath(package, repository, ref);
+    final spec = _GitSpec(
+        package: package,
+        url: Uri(
+            scheme: 'git',
+            host: 'github.com',
+            pathSegments: [repository.org, repository.name]).toString(),
+        path: path,
+        ref: ref == 'master' ? null : ref);
+    return '$spec';
+  } on PackageNotPublished {
+    // Fall back on searching locally in case the package is not published.
+    try {
+      final localPackage =
+          Directory(await localPath(package, searchPaths)).absolute;
+      final gitRoot = findGitRoot(localPackage);
+      if (gitRoot == null) {
+        throw UserFailure('$package found at $localPath is not in a git repo');
+      }
+      final path = gitRoot.absolute.path == localPackage.path
+          ? null
+          : p.relative(localPackage.path, from: gitRoot.path);
+      final gitUrl = await _findGitUrl(gitRoot);
+      final spec = _GitSpec(
+          package: package,
+          url: gitUrl.toString(),
+          path: path,
+          ref: ref == 'master' ? null : ref);
+      return '$spec';
+    } on PackageNotFound catch (e) {
+      throw PackageNotFound(e.package, ['publisehd to pub', ...e.searched]);
+    }
   }
-  final dotGit = Directory(p.join(dir.path, '.git'));
-  if (await dotGit.exists()) return dir;
-  return await _findGitRoot(dir.parent);
 }
 
-Future<String> _findGitUrl(Directory dir) async {
+_GithubRepo _findRepository(Pubspec pubspec) {
+  final uri = pubspec.repository ?? pubspec.homepage?.asUri;
+  if (uri == null) {
+    throw UserFailure('Published package must have a repository or '
+        'homepage configuration to find git URL.');
+  }
+  if (uri.host != 'github.com') {
+    throw UserFailure('Package repository or homepage must be a github repo');
+  }
+  final path = uri.pathSegments.take(2).toList();
+  return _GithubRepo(path[0], path[1]);
+}
+
+Future<_GithubRepo> _findGitUrl(Directory dir) async {
   final listRemotes =
       await Process.run('git', ['remote'], workingDirectory: dir.path);
   final remoteNames =
@@ -75,7 +110,9 @@ Future<String> _findGitUrl(Directory dir) async {
   final repos = [for (final url in remoteUrls) _GithubRepo.parse(url)!];
   for (final org in _preferredOrgs) {
     for (final repo in repos) {
-      if (repo.org == org) return 'git://github.com/${repo.org}/${repo.name}';
+      if (repo.org == org) {
+        return repo;
+      }
     }
   }
   throw UserFailure(
@@ -113,3 +150,44 @@ class _GithubRepo {
 }
 
 const _preferredOrgs = ['dart-lang', 'google'];
+
+extension on String {
+  Uri get asUri => Uri.parse(this);
+}
+
+Future<String?> _packageRelativePath(
+    String package, _GithubRepo repo, String ref) async {
+  final gitArchive = await http.readBytes(Uri(
+      scheme: 'https',
+      host: 'api.github.com',
+      pathSegments: ['repos', repo.org, repo.name, 'tarball', ref]));
+  final decoder = TarDecoder();
+  final archive = decoder.decodeBytes(gzip.decode(gitArchive));
+  final pubspecs =
+      archive.where((f) => f.name.endsWith('pubspec.yaml')).toList();
+  // First pass, look for package with same directory name.
+  for (final file in pubspecs) {
+    final parent = p.basename(p.dirname(file.name));
+    if (parent != package) continue;
+    if (_isPackagePubspec(package, file.read!)) {
+      return _relativeArchivePath(file.name);
+    }
+  }
+  // Second pass, check all pubspec files.
+  for (final file in pubspecs) {
+    if (_isPackagePubspec(package, file.read!)) {
+      return _relativeArchivePath(file.name);
+    }
+  }
+  return null;
+}
+
+String _relativeArchivePath(String archiveFilePath) =>
+    p.joinAll(p.split(p.dirname(archiveFilePath)).skip(1));
+
+bool _isPackagePubspec(String package, String pubspecContent) =>
+    Pubspec.parse(pubspecContent).name == package;
+
+extension on ArchiveFile {
+  String? get read => rawContent?.readString(size: rawContent!.length);
+}
