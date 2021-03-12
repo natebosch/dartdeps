@@ -60,7 +60,7 @@ Future<String?> _findInDirectory(String package, Directory directory) async {
     } on ParsedYamlException {
       // This may be a pubspec being edited with a `name: local` which would
       // cause an exception as in invalid pubspec. Ignore it.
-      return null;
+      continue;
     }
     if (pubspec.name == package) return pubspecFile.parent.path;
   }
