@@ -2,7 +2,7 @@ import 'dart:io';
 
 Directory? findGitRoot(Directory from) {
   for (final directory in from.absolute.parents) {
-    if (directory.containsDirectory('.git')) return directory;
+    if (directory.containsDirectoryOrFile('.git')) return directory;
   }
   return null;
 }
@@ -16,6 +16,9 @@ extension on Directory {
     } while (directory.path != directory.parent.path);
   }
 
-  bool containsDirectory(String name) =>
-      Directory.fromUri(uri.resolve(name)).existsSync();
+  bool containsDirectoryOrFile(String name) {
+    final resolved = uri.resolve(name);
+    return Directory.fromUri(resolved).existsSync() ||
+        File.fromUri(resolved).existsSync();
+  }
 }
