@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:checked_yaml/checked_yaml.dart' show ParsedYamlException;
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -53,7 +54,14 @@ Future<String?> _findInNeighbors(String package, Directory gitRoot) async {
 
 Future<String?> _findInDirectory(String package, Directory directory) async {
   await for (final pubspecFile in _findPubspecs(directory.path)) {
-    final pubspec = Pubspec.parse(await pubspecFile.readAsString());
+    Pubspec pubspec;
+    try {
+      pubspec = Pubspec.parse(await pubspecFile.readAsString());
+    } on ParsedYamlException {
+      // This may be a pubspec being edited with a `name: local` which would
+      // cause an exception as in invalid pubspec. Ignore it.
+      return null;
+    }
     if (pubspec.name == package) return pubspecFile.parent.path;
   }
 }
