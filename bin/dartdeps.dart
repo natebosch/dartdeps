@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:dartdeps/dartdeps.dart';
 import 'package:http/http.dart' as http;
@@ -20,8 +21,7 @@ void main(List<String> args) async {
     ..addCommand(LocateGit())
     ..addCommand(LocateLatest())
     ..addCommand(LocateLocal())
-    ..addCommand(Replace())
-    ..addCommand(Scan());
+    ..addCommand(Replace());
 
   try {
     final parsedArgs = commandRunner.parse(args);
@@ -61,23 +61,11 @@ void main(List<String> args) async {
   }
 }
 
-class Scan extends Command<int> {
-  @override
-  String get description =>
-      'Scan for local Dart projects under the current directory.';
-
-  @override
-  String get name => 'scan';
-
-  @override
-  Future<int> run() async {
-    print('Scanning for dart packages');
-    await scanForPackages();
-    return 0;
-  }
-}
-
 class LocateLocal extends Command<int> {
+  LocateLocal() {
+    _addSearchPathsOption(argParser);
+  }
+
   @override
   String get description =>
       'Prints a path dependency with a relative path to a local package.';
@@ -90,11 +78,13 @@ class LocateLocal extends Command<int> {
 
   @override
   Future<int> run() async {
-    if (argResults!.rest.length != 1) {
+    final argResults = this.argResults!;
+    if (argResults.rest.length != 1) {
       usageException('Specify a single local package to locate');
     }
-    final package = argResults!.rest.single;
-    stdout.write(await locateLocal(package));
+    final package = argResults.rest.single;
+    stdout.write(
+        await locateLocal(package, argResults['search-path'] as List<String>));
     return 0;
   }
 }
@@ -128,6 +118,9 @@ class LocateLatest extends Command<int> {
 }
 
 class LocateGit extends Command<int> {
+  LocateGit() {
+    _addSearchPathsOption(argParser);
+  }
   @override
   String get description =>
       'Prints a git dependency for a package in the dart-lang or '
@@ -141,17 +134,27 @@ class LocateGit extends Command<int> {
 
   @override
   Future<int> run() async {
-    if (argResults!.rest.isEmpty || argResults!.rest.length > 2) {
+    final argResults = this.argResults!;
+    if (argResults.rest.isEmpty || argResults.rest.length > 2) {
       usageException('Specify a single package and optionall a git ref');
     }
-    final package = argResults!.rest.first;
-    final ref = argResults!.rest.length > 1 ? argResults!.rest[1] : 'master';
-    stdout.write(await locateGit(package, ref));
+    final package = argResults.rest.first;
+    final ref = argResults.rest.length > 1 ? argResults.rest[1] : 'master';
+    final client = http.Client();
+    try {
+      stdout.write(await locateGit(
+          package, ref, argResults['search-path'] as List<String>, client));
+    } finally {
+      client.close();
+    }
     return 0;
   }
 }
 
 class Replace extends Command<int> {
+  Replace() {
+    _addSearchPathsOption(argParser);
+  }
   @override
   String get description =>
       'Prints a replacement for a pubspec dependency from a '
@@ -168,13 +171,23 @@ class Replace extends Command<int> {
 
   @override
   Future<int> run() async {
+    final argResults = this.argResults!;
     final line = stdin.readLineSync()!;
     final client = http.Client();
     try {
-      stdout.write(await replaceDependency(line, client));
+      stdout.write(await replaceDependency(
+          line, argResults['search-path'] as List<String>, client));
     } finally {
       client.close();
     }
     return 0;
   }
+}
+
+void _addSearchPathsOption(ArgParser argParser) {
+  argParser.addMultiOption('search-path',
+      abbr: 's',
+      help: 'The local paths where source code is checked out.\n'
+          r'For example "$HOME/source".',
+      valueHelp: 'path');
 }

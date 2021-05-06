@@ -13,12 +13,6 @@ command into the file.
 pub global activate -s git git://github.com/natebosch/dartdeps.git
 ```
 
-Move to a parent directory of your Dart projects. This may be your home
-directory. Run `dartdeps scan` to write a `.dartpackages` manifest file which
-describes the location of all local Dart packages under that directory. The
-manifest file is required for `local` or `git` dependencies. Whenever you add a
-new Dart package the scan must be performed again.
-
 # Supported dependency types
 
 ## latest
@@ -31,17 +25,14 @@ dependencies.
 
 ## local
 
-Finds a local, relative, path dependency for a given package. The package must
-be present in a `.dartpackages` file in a directory somewhere above the working
-directory.
+Finds a local, relative, path dependency for a given package.
 
 - `dartdeps local <package>`
 
 ## git
 
 Finds the URL, path, and ref, for a package on github. The package must be in
-the `dart-lang` or `google` org. The package must be present in a
-`.dartpackages` file in a directory somewhere above the working directory.
+the `dart-lang` or `google` org.
 
 - `dartdeps git <package>`
 - `dartdeps git <pacakge> <ref>`
@@ -56,7 +47,7 @@ correct relative paths.
 
 The `dartdeps replace` command reads a string from stdin in the format
 `<package>: <type>` and prints the pub constraint. The `git` dependency type
-supports defining a ref (branch, tag, sha) in the format `git@<ref>`.
+supports defining a ref (branch, tag, commit) in the format `git@<ref>`.
 
 To use this, write a line like one of the following:
 
