@@ -20,7 +20,7 @@ Future<String> replaceDependency(
   if (dependencyType.startsWith('git')) {
     final ref =
         dependencyType.contains('@') ? dependencyType.split('@')[1] : 'master';
-    return '${await locateGit(package, ref, searchPaths, client)}';
+    return await locateGit(package, ref, searchPaths, client);
   }
   throw UserFailure('Unsupported dependency type $dependencyType');
 }

@@ -50,6 +50,7 @@ Future<String?> _findInNeighbors(String package, Directory gitRoot) async {
     final found = await _findInDirectory(package, subdirectory);
     if (found != null) return found;
   }
+  return null;
 }
 
 Future<String?> _findInDirectory(String package, Directory directory) async {
@@ -64,6 +65,7 @@ Future<String?> _findInDirectory(String package, Directory directory) async {
     }
     if (pubspec.name == package) return pubspecFile.parent.path;
   }
+  return null;
 }
 
 Stream<File> _findPubspecs(String path) => crawlAsync<String, File>(
