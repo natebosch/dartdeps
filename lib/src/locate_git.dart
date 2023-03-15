@@ -68,9 +68,9 @@ Future<String> _locateFromPubConfig(
   final spec = _GitSpec(
       package: package,
       url: Uri(
-          scheme: 'git',
+          scheme: 'https',
           host: 'github.com',
-          pathSegments: [repository.org, repository.name]).toString(),
+          pathSegments: [repository.org, '${repository.name}.git']).toString(),
       path: path,
       ref: ref == 'master' ? null : ref);
   return '$spec';
